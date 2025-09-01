@@ -4,13 +4,13 @@ from typing import Callable
 
 
 def gradient_descendent(
-    x0: float,
-    f: Callable[[float], float],
+    x0: list[float],
+    f: Callable[[jnp.ndarray], float],
     alfa: float,
     max_iter: int,
     tolerance: float,
     stop_criterium: int = 1,
-) -> float:
+) -> jnp.ndarray:
     """
     Implementa o algoritmo de Gradiente Descendente para encontrar o mínimo de uma função.
 
@@ -25,11 +25,11 @@ def gradient_descendent(
     """
 
     iter = 0
-    cost = f(x0)
+    cost = f(jnp.array(x0))
     cost_old = cost
     dfdx = grad(f)
-    xk = x0
-    xk_old = x0
+    xk = jnp.array(x0)
+    xk_old = xk.copy()
 
     while iter <= max_iter:
         # Calcular o vetor gradiente ponto X_k
@@ -47,35 +47,34 @@ def gradient_descendent(
         match stop_criterium:
             case 1:
                 # Critério de parada baseado no valor do gradiente
-                if jnp.abs(grad_xk) <= tolerance:
+                if jnp.abs(grad_xk).max() <= tolerance:
                     break
             case 2:
                 # Critério de parada baseado na mudança do valor de x
-                if jnp.abs(xk - xk_old) < tolerance:
+                if jnp.abs(xk - xk_old).max() < tolerance:
                     break
             case 3:
                 # Critério de parada baseado na mudança do valor da função de custo
                 if jnp.abs(cost - cost_old) < tolerance:
                     break
             case _:
-                raise ValueError("Critério de parada inválido. Use 1 ou 2.")
+                raise ValueError("Critério de parada inválido. Use 1, 2 ou 3.")
 
-        xk_old = xk
+        xk_old = xk.copy()
         cost_old = cost
 
     return xk
 
 
 if __name__ == "__main__":
-    # Exemplo de uso
-    def funcao_exemplo(x):
-        # 2x + 3 = 0 -> x = -3/2
-        return x**2 + 3*x + 2
+    # Função de exemplo: J(x, y) = (x - 3)^2 + (y + 2)^2
+    def J(x):
+        return (x[0] - 3)**2 + (x[1] + 2)**2
 
-    ponto_inicial = 1.0
-    taxa_aprendizado = 0.1
-    maximo_iteracoes = 100
-    tolerancia = 1e-6
+    x0 = [0.0, 0.0]
+    learning_rate = 0.1
+    max_iter = 100
+    tolerance = 1e-6
 
-    ponto_minimo = gradient_descendent(ponto_inicial, funcao_exemplo, taxa_aprendizado, maximo_iteracoes, tolerancia)
+    ponto_minimo = gradient_descendent(x0, J, learning_rate, max_iter, tolerance)
     print(f"Ponto mínimo encontrado: {ponto_minimo}")
