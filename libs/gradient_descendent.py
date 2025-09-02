@@ -10,7 +10,7 @@ def gradient_descendent(
     max_iter: int,
     tolerance: float,
     stop_criterium: int = 1,
-) -> Tuple[list[jnp.ndarray], list[jnp.ndarray]]:
+) -> Tuple[list[jnp.ndarray], list[jnp.ndarray], int]:
     """
     Implementa o algoritmo de Gradiente Descendente para encontrar o mínimo de uma função.
 
@@ -29,14 +29,15 @@ def gradient_descendent(
         xk (jnp.ndarray): ponto onde a função atinge (aprox.) o valor mínimo.
     """
 
-    iter = 0
+    num_iter = 0
     xk = jnp.array(x0, dtype=jnp.float32)
     cost = f(xk)
     dfdx = grad(f)
     x_values = [xk.copy()]
     costs = [cost]
+    stop_condition = False
 
-    while iter <= max_iter:
+    while num_iter < max_iter:
         # Calcular o gradiente no ponto Xk
         grad_xk = dfdx(xk)
 
@@ -47,25 +48,19 @@ def gradient_descendent(
         cost = f(xk)
 
         # Aumentar o iterador
-        iter += 1
+        num_iter += 1
 
         # Critério de parada
         match stop_criterium:
             case 1:
                 if jnp.abs(grad_xk).max() <= tolerance:
-                    x_values.append(xk.copy())
-                    costs.append(cost)
-                    break
+                    stop_condition = True
             case 2:
                 if jnp.abs(xk - x_values[-1]).max() < tolerance:
-                    x_values.append(xk.copy())
-                    costs.append(cost)
-                    break
+                    stop_condition = True
             case 3:
                 if jnp.abs(cost - costs[-1]) < tolerance:
-                    x_values.append(xk.copy())
-                    costs.append(cost)
-                    break
+                    stop_condition = True
             case _:
                 raise ValueError("Critério de parada inválido. Use 1, 2 ou 3.")
 
@@ -73,7 +68,10 @@ def gradient_descendent(
         x_values.append(xk.copy())
         costs.append(cost)
 
-    return x_values, costs
+        if stop_condition:
+            break
+
+    return x_values, costs, num_iter
 
 
 if __name__ == "__main__":
@@ -81,5 +79,7 @@ if __name__ == "__main__":
         return (x[0] - 3)**2 + (x[1] + 2)**2
 
     x0 = [0.0, 0.0]
-    x_values, costs = gradient_descendent(x0, J, alfa=0.1, max_iter=100, tolerance=1e-6)
+    x_values, costs, num_iter = gradient_descendent(x0, J, alfa=0.1, max_iter=100, tolerance=1e-6)
     print(f"Ponto mínimo encontrado: {x_values[-1]}")
+    print(f"Custo mínimo: {costs[-1]}")
+    print(f"Número de iterações: {num_iter}")
