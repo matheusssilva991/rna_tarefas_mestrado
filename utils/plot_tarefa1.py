@@ -50,7 +50,8 @@ def plot_function(f, x_values, costs, title="Superfície da Função de Custo + 
 def plot_six_hump_camel(
     f: Callable[[np.ndarray], float],
     x_values: List[np.ndarray],
-    title: str = "Six-Hump Camel Function Optimization Path"
+    title: str = "Six-Hump Camel Function Optimization Path",
+    show_global_minima: bool = False
 ):
     # Preparação dos Dados
     x_values_arr = np.array(x_values)
@@ -96,6 +97,7 @@ def plot_six_hump_camel(
         marker=dict(size=8, color='cyan', symbol='diamond'),
         name='Início (P0)'
     ))
+
     # Ponto Final
     fig.add_trace(go.Scatter3d(
         x=[x_values_arr[-1, 0]],
@@ -105,6 +107,27 @@ def plot_six_hump_camel(
         marker=dict(size=10, color='red', symbol='x'),
         name=f'Fim (P{len(x_values)-1})'
     ))
+
+    # Adicionar os mínimos globais conhecidos
+    if show_global_minima:
+        # Coordenadas dos mínimos globais da Six-Hump Camel
+        global_minima = [
+            np.array([-0.0898, 0.7126]),
+            np.array([0.0898, -0.7126])
+        ]
+
+        # Valores da função nos mínimos globais
+        global_min_values = [f(point) for point in global_minima]
+
+        # Plotar os mínimos globais
+        fig.add_trace(go.Scatter3d(
+            x=[point[0] for point in global_minima],
+            y=[point[1] for point in global_minima],
+            z=global_min_values,
+            mode='markers',
+            marker=dict(size=12, color='gold', symbol='diamond'),
+            name='Mínimos Globais'
+        ))
 
     # Layout
     fig.update_layout(
