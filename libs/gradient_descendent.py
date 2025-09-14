@@ -3,10 +3,10 @@ from typing import Callable, Sequence, Tuple
 
 
 def gradient_descendent(
-    x0: Sequence[float | int] | np.ndarray,
+    w0: Sequence[float | int] | np.ndarray,
     cost_fn: Callable[[np.ndarray], float],
     grad_cost_fn: Callable[[np.ndarray], np.ndarray],
-    alpha: float,
+    learning_rate: float,
     max_iter: int,
     tolerance: float,
     stopping_criterion: int = 1,
@@ -15,7 +15,7 @@ def gradient_descendent(
     Implementa o algoritmo de Gradiente Descendente para encontrar o mínimo de uma função.
 
     Parameters:
-        x0: ponto inicial (lista, tupla ou np.ndarray).
+        w0: ponto inicial (lista, tupla ou np.ndarray).
         cost_fn: função de custo a ser minimizada.
         grad_cost_fn: gradiente da função de custo.
         alpha: taxa de aprendizado.
@@ -27,27 +27,27 @@ def gradient_descendent(
             3 = baseado na mudança da função de custo.
 
     Returns:
-        x_values: list[np.ndarray]
+        w_values: list[np.ndarray]
         costs: list[float]
         num_iter: int
     """
 
     num_iter = 0
-    xk = np.array(x0, dtype=np.float64)
-    cost = cost_fn(xk)
-    x_values = [xk.copy()]
+    wk = np.array(w0, dtype=np.float64)
+    cost = cost_fn(wk)
+    w_values = [wk.copy()]
     costs = [cost]
     stop_condition = False
 
     while num_iter < max_iter:
-        # Calcular o gradiente no ponto Xk
-        grad_xk = grad_cost_fn(xk)
+        # Calcular o gradiente no ponto wk
+        grad_wk = grad_cost_fn(wk)
 
-        # Atualizar o ponto Xk
-        xk = xk - alpha * grad_xk
+        # Atualizar o ponto wk
+        wk = wk - learning_rate * grad_wk
 
         # Calcular o custo
-        cost = cost_fn(xk)
+        cost = cost_fn(wk)
 
         # Aumentar o iterador
         num_iter += 1
@@ -55,10 +55,10 @@ def gradient_descendent(
         # Critério de parada
         match stopping_criterion:
             case 1:
-                if np.abs(grad_xk).max() <= tolerance:
+                if np.abs(grad_wk).max() <= tolerance:
                     stop_condition = True
             case 2:
-                if np.abs(xk - x_values[-1]).max() < tolerance:
+                if np.abs(wk - w_values[-1]).max() < tolerance:
                     stop_condition = True
             case 3:
                 if np.abs(cost - costs[-1]) < tolerance:
@@ -67,28 +67,28 @@ def gradient_descendent(
                 raise ValueError("Critério de parada inválido. Use 1, 2 ou 3.")
 
         # Armazenar o ponto e o custo
-        x_values.append(xk.copy())
+        w_values.append(wk.copy())
         costs.append(cost)
 
         if stop_condition:
             break
 
-    return x_values, costs, num_iter
+    return w_values, costs, num_iter
 
 
 if __name__ == "__main__":
-    def J(x: np.ndarray) -> float:
-        return (x[0] - 3)**2 + (x[1] + 2)**2
+    def J(w: np.ndarray) -> float:
+        return (w[0] - 3)**2 + (w[1] + 2)**2
 
-    def grad_J(x: np.ndarray) -> np.ndarray:
+    def grad_J(w: np.ndarray) -> np.ndarray:
         # gradiente: [2(x0 - 3), 2(x1 + 2)]
-        return np.array([2 * (x[0] - 3), 2 * (x[1] + 2)], dtype=np.float64)
+        return np.array([2 * (w[0] - 3), 2 * (w[1] + 2)], dtype=np.float64)
 
-    x0 = [0.0, 0.0]
-    x_values, costs, num_iter = gradient_descendent(
-        x0, J, grad_J, alpha=0.1, max_iter=100, tolerance=1e-6
+    w0 = [0.0, 0.0]
+    w_values, costs, num_iter = gradient_descendent(
+        w0, J, grad_J, learning_rate=0.1, max_iter=100, tolerance=1e-6
     )
 
-    print(f"Ponto mínimo encontrado: {x_values[-1]}")
+    print(f"Ponto mínimo encontrado: {w_values[-1]}")
     print(f"Custo mínimo: {costs[-1]}")
     print(f"Número de iterações: {num_iter}")
