@@ -16,7 +16,7 @@ def make_mse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) ->
     def loss_gradient(w: NDArray) -> NDArray:
         predictions = X @ w
         error = y - predictions
-        grad = (-2/n) * (X.T @ error)
+        grad = ((-2/n) * X.T) @ error
         return grad
 
     return loss_function, loss_gradient
