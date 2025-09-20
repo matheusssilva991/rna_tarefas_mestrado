@@ -1,32 +1,65 @@
 import numpy as np
 
-def min_max_normalize(x: np.ndarray, n_min: float, n_max: float) -> np.ndarray:
-    """
-    Normaliza os dados usando Min-Max Scaling para o intervalo [0, 1].
+class MinMaxNormalizer:
+    def __init__(self, n_min: float = 0.0, n_max: float = 1.0):
+        self.n_min = n_min
+        self.n_max = n_max
+        self.x_min = None
+        self.x_max = None
 
-    Parameters:
-        x: np.ndarray
-            Dados a serem normalizados.
-    Returns:
-        np.ndarray
-            Dados normalizados.
-    """
-    x_min = np.min(x)
-    x_max = np.max(x)
-    return n_min + ((x - x_min) * (n_max - n_min)) / (x_max - x_min)
+    def fit(self, x: np.ndarray):
+        """Armazena min e max dos dados."""
+        self.x_min = np.min(x)
+        self.x_max = np.max(x)
+
+    def normalize(self, x: np.ndarray) -> np.ndarray:
+        if self.x_min is None or self.x_max is None:
+            raise ValueError("Você deve chamar 'fit' antes de normalizar.")
+        return self.n_min + ((x - self.x_min) * (self.n_max - self.n_min)) / (self.x_max - self.x_min)
+
+    def denormalize(self, x_norm: np.ndarray) -> np.ndarray:
+        if self.x_min is None or self.x_max is None:
+            raise ValueError("Você deve chamar 'fit' antes de desnormalizar.")
+        return self.x_min + ((x_norm - self.n_min) * (self.x_max - self.x_min)) / (self.n_max - self.n_min)
+
+    def desnormalize_weights(self, w: np.ndarray) -> np.ndarray:
+        """
+        w = [a, b, c] -> c é o bias
+        """
+        w_no_bias = w[:-1]
+        b = w[-1]
+        scale = (self.x_max - self.x_min) / (self.n_max - self.n_min)
+        w_orig = w_no_bias * scale
+        b_orig = b - np.sum(w_orig * (self.x_min - self.n_min))
+        return np.concatenate([w_orig, [b_orig]])
 
 
-def padronize(x: np.ndarray) -> np.ndarray:
-    """
-    Padroniza os dados para que tenham média 0 e desvio padrão 1 (Z-score normalization).
 
-    Parameters:
-        x: np.ndarray
-            Dados a serem padronizados.
-    Returns:
-        np.ndarray
-            Dados padronizados.
-    """
-    mean = np.mean(x)
-    std = np.std(x)
-    return (x - mean) / std
+class StandardScaler:
+    def __init__(self):
+        self.mean = None
+        self.std = None
+
+    def fit(self, x: np.ndarray):
+        self.mean = np.mean(x)
+        self.std = np.std(x)
+
+    def normalize(self, x: np.ndarray) -> np.ndarray:
+        if self.mean is None or self.std is None:
+            raise ValueError("Você deve chamar 'fit' antes de normalizar.")
+        return (x - self.mean) / self.std
+
+    def denormalize(self, x_std: np.ndarray) -> np.ndarray:
+        if self.mean is None or self.std is None:
+            raise ValueError("Você deve chamar 'fit' antes de desnormalizar.")
+        return x_std * self.std + self.mean
+
+    def desnormalize_weights(self, w: np.ndarray) -> np.ndarray:
+        """
+        w = [a, b, c] -> c é o bias
+        """
+        w_no_bias = w[:-1]
+        b = w[-1]
+        w_orig = w_no_bias / self.std
+        b_orig = b - np.sum(w_no_bias * self.mean / self.std)
+        return np.concatenate([w_orig, [b_orig]])
