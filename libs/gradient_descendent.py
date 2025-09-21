@@ -32,8 +32,6 @@ def gradient_descendent(
         costs: list[float]
         num_iter: int
     """
-
-    # Permitir que o usuário passe um único int
     if isinstance(stopping_criteria, int):
         stopping_criteria = [stopping_criteria]
 
