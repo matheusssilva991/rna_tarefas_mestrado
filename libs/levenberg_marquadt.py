@@ -63,19 +63,20 @@ def levenberg_marquadt(
 
             except np.linalg.LinAlgError:
                 current_alpha *= alpha_variability
+                print("Matriz singular, aumentando alpha.")
                 continue
 
         # Verificar critério de parada baseado no gradiente
         if 1 in stopping_criteria and np.abs(E_w).max() <= tolerance:
-            print("Convergiu pelo critério do gradiente.")
+            # print("Convergiu pelo critério do gradiente.")
             break
         # verificar critério de parada baseado na mudança em w
         if 2 in stopping_criteria and len(w_values) > 1 and np.abs(wk - w_values[-2]).max() < tolerance:
-            print("Convergiu pelo critério da mudança em w.")
+            # print("Convergiu pelo critério da mudança em w.")
             break
         # verificar critério de parada baseado na mudança no custo
         if 3 in stopping_criteria and len(costs) > 1 and np.abs(cost - costs[-2]) < tolerance:
-            print("Convergiu pelo critério da mudança no custo.")
+            # print("Convergiu pelo critério da mudança no custo.")
             break
 
     return w_values, costs, num_iter

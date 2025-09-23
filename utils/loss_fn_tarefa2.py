@@ -4,7 +4,7 @@ from typing import Callable, Tuple
 
 
 def make_mse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -> Tuple[Callable[[np.ndarray], float], Callable[[np.ndarray], np.ndarray]]:
-    X = np.column_stack([x_data ** 3, y_data ** 2, np.ones(len(x_data))])
+    X = np.column_stack([x_data, y_data, np.ones(len(x_data))])
     y = z_data
     n = len(z_data)
 
@@ -38,7 +38,7 @@ def make_rmse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -
 
 
 def make_mae_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -> Tuple[Callable[[np.ndarray], float], Callable[[np.ndarray], np.ndarray]]:
-    X = np.column_stack([x_data ** 3, y_data ** 2, np.ones(len(x_data))])
+    X = np.column_stack([x_data, y_data, np.ones(len(x_data))])
     y = z_data
     n = len(z_data)
 
