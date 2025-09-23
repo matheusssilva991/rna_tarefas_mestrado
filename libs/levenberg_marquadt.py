@@ -33,7 +33,7 @@ def levenberg_marquadt(
         # Reset do parâmetro λ e cost_aux para esta iteração
         current_alpha = alpha
         cost_aux = float('inf')
-        max_inner_iter = 50
+        max_inner_iter = 10
         inner_iter = 0
 
         while cost_aux >= cost and inner_iter < max_inner_iter:

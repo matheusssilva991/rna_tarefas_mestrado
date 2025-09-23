@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class MinMaxNormalizer:
     def __init__(self, n_min: float = 0.0, n_max: float = 1.0):
         self.n_min = n_min
@@ -45,41 +46,6 @@ class MinMaxNormalizer:
 
         return np.concatenate([w_orig, [b_orig]])
 
-    def desnormalize_polynomial_weights(self, w: np.ndarray, powers: list) -> np.ndarray:
-        """
-        Desnormaliza pesos de um modelo polinomial treinado em dados Min-Max normalizados.
-
-        Parâmetros:
-        w: np.ndarray - Pesos [w₁, w₂, ..., bias]
-        powers: list - Lista com as potências correspondentes a cada peso [p₁, p₂, ...]
-
-        Exemplo para um modelo w[0]*x^3 + w[1]*y^2 + w[2]:
-        powers = [3, 2]
-
-        Retorna:
-        np.ndarray - Pesos desnormalizados
-        """
-        if self.x_min is None or self.x_max is None:
-            raise ValueError("Você deve chamar 'fit' antes de desnormalizar pesos.")
-
-        if len(powers) != len(w) - 1:
-            raise ValueError(f"Número de potências ({len(powers)}) deve ser igual ao número de pesos - 1 ({len(w)-1})")
-
-        w_new = np.zeros_like(w)
-
-        # Processar cada peso (exceto o bias)
-        for i in range(len(w) - 1):
-            # Escala para a feature
-            scale = (self.x_max[i] - self.x_min[i]) / (self.n_max - self.n_min)
-            # Aplicar escala elevada à potência
-            w_new[i] = w[i] / (scale ** powers[i])
-
-        # O bias é mais complexo, esta é uma aproximação
-        # Para modelo polinomial, o ajuste exato do bias é mais complicado
-        w_new[-1] = w[-1]
-
-        return w_new
-
 
 class StandardScaler:
     def __init__(self):
@@ -120,35 +86,3 @@ class StandardScaler:
         b_orig = b - np.sum((w_no_bias * self.mean) / self.std)
 
         return np.concatenate([w_orig, [b_orig]])
-
-    def desnormalize_polynomial_weights(self, w: np.ndarray, powers: list) -> np.ndarray:
-        """
-        Desnormaliza pesos de um modelo polinomial treinado em dados padronizados.
-
-        Parâmetros:
-        w: np.ndarray - Pesos [w₁, w₂, ..., bias]
-        powers: list - Lista com as potências correspondentes a cada peso [p₁, p₂, ...]
-
-        Exemplo para um modelo w[0]*x^3 + w[1]*y^2 + w[2]:
-        powers = [3, 2]
-
-        Retorna:
-        np.ndarray - Pesos desnormalizados
-        """
-        if self.mean is None or self.std is None:
-            raise ValueError("Você deve chamar 'fit' antes de desnormalizar pesos.")
-
-        if len(powers) != len(w) - 1:
-            raise ValueError(f"Número de potências ({len(powers)}) deve ser igual ao número de pesos - 1 ({len(w)-1})")
-
-        w_new = np.zeros_like(w)
-
-        # Processar cada peso (exceto o bias)
-        for i in range(len(w) - 1):
-            # Aplicar escala elevada à potência
-            w_new[i] = w[i] / (self.std[i] ** powers[i])
-
-        # O bias é mais complexo, esta é uma aproximação para polinômios
-        w_new[-1] = w[-1]
-
-        return w_new
