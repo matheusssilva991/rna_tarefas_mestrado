@@ -31,8 +31,6 @@ def levenberg_marquadt(
         E_w = -(1/n) * J.T @ r
         H_w = (1/n) * J.T @ J
 
-        # Reset do parâmetro λ e cost_aux para esta iteração
-        # current_alpha = alpha
         cost_aux = float('inf')
         max_inner_iter = 50
         inner_iter = 0
