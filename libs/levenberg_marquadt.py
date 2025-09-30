@@ -19,6 +19,7 @@ def levenberg_marquadt(
     cost = cost_fn(wk)
     w_values = [wk.copy()]
     costs = [cost]
+    current_alpha = alpha
 
     while num_iter < max_iter:
         # Calcular jacobiano e resíduos
@@ -31,9 +32,9 @@ def levenberg_marquadt(
         H_w = (1/n) * J.T @ J
 
         # Reset do parâmetro λ e cost_aux para esta iteração
-        current_alpha = alpha
+        # current_alpha = alpha
         cost_aux = float('inf')
-        max_inner_iter = 10
+        max_inner_iter = 50
         inner_iter = 0
 
         while cost_aux >= cost and inner_iter < max_inner_iter:
@@ -60,7 +61,10 @@ def levenberg_marquadt(
                     w_values.append(wk.copy())
                     costs.append(cost)
                     num_iter += 1
+                    break
 
+                print(f"Iteração interna {inner_iter}, custo auxiliar: {cost_aux:.6f}, alpha: {current_alpha:.6f}")
+                print(cost_aux, cost, current_alpha)
             except np.linalg.LinAlgError:
                 current_alpha *= alpha_variability
                 print("Matriz singular, aumentando alpha.")
