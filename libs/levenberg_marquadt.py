@@ -61,8 +61,6 @@ def levenberg_marquadt(
                     num_iter += 1
                     break
 
-                print(f"Iteração interna {inner_iter}, custo auxiliar: {cost_aux:.6f}, alpha: {current_alpha:.6f}")
-                print(cost_aux, cost, current_alpha)
             except np.linalg.LinAlgError:
                 current_alpha *= alpha_variability
                 print("Matriz singular, aumentando alpha.")

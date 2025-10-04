@@ -1,9 +1,10 @@
-import numpy as np # pyright: ignore[reportMissingImports]
-from numpy.typing import NDArray # pyright: ignore[reportMissingImports]
+import numpy as np
+from numpy.typing import NDArray
 from typing import Callable, Tuple
 
-
-def make_mse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -> Tuple[Callable[[np.ndarray], float], Callable[[np.ndarray], np.ndarray]]:
+# ================= MSE ==================
+def make_mse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray
+) -> Tuple[Callable[[NDArray], float], Callable[[NDArray], NDArray]]:
     X = np.column_stack([x_data, y_data, np.ones(len(x_data))])
     y = z_data
     n = len(z_data)
@@ -11,18 +12,20 @@ def make_mse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) ->
     def loss_function(w: NDArray) -> float:
         predictions = X @ w
         error = y - predictions
-        return np.mean(np.square(error, dtype=np.float64))
+        return np.mean(error**2)
 
     def loss_gradient(w: NDArray) -> NDArray:
         predictions = X @ w
         error = y - predictions
-        grad = ((-2/n) * X.T) @ error
+        grad = ((-2 / n) * X.T) @ error
         return grad
 
     return loss_function, loss_gradient
 
 
-def make_rmse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -> Tuple[Callable[[np.ndarray], float], Callable[[np.ndarray], np.ndarray]]:
+# ================= RMSE ==================
+def make_rmse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray
+) -> Tuple[Callable[[NDArray], float], Callable[[NDArray], NDArray]]:
     mse_loss_fn, mse_loss_grad = make_mse_loss_function(x_data, y_data, z_data)
 
     def rmse_loss_function(w: NDArray) -> float:
@@ -30,14 +33,15 @@ def make_rmse_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -
 
     def rmse_loss_gradient(w: NDArray) -> NDArray:
         mse_value = mse_loss_fn(w)
-        if mse_value == 0:
-            return np.zeros_like(w)
-        return (0.5 / np.sqrt(mse_value)) * mse_loss_grad(w)
+        grad_mse = mse_loss_grad(w)
+        return (0.5 / np.sqrt(mse_value + 1e-12)) * grad_mse  # +eps para evitar div/0
 
     return rmse_loss_function, rmse_loss_gradient
 
 
-def make_mae_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) -> Tuple[Callable[[np.ndarray], float], Callable[[np.ndarray], np.ndarray]]:
+# ================= MAE ==================
+def make_mae_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray
+) -> Tuple[Callable[[NDArray], float], Callable[[NDArray], NDArray]]:
     X = np.column_stack([x_data, y_data, np.ones(len(x_data))])
     y = z_data
     n = len(z_data)
@@ -45,13 +49,12 @@ def make_mae_loss_function(x_data: NDArray, y_data: NDArray, z_data: NDArray) ->
     def loss_function(w: NDArray) -> float:
         predictions = X @ w
         error = np.abs(y - predictions)
-        return (1/n) * np.sum(error)
+        return np.mean(error)
 
     def loss_gradient(w: NDArray) -> NDArray:
         predictions = X @ w
         error = y - predictions
-        sign_error = np.sign(error)
-        grad = -X.T @ sign_error
-        return (1/n) * grad
+        grad = -(1/n) * X.T @ np.sign(error)
+        return grad
 
     return loss_function, loss_gradient
