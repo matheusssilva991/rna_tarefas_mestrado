@@ -42,7 +42,7 @@ class MinMaxNormalizer:
         scale = (self.x_max - self.x_min) / (self.n_max - self.n_min)
 
         w_orig = w_no_bias / scale
-        b_orig = b - np.sum(w_no_bias * self.x_min / scale)
+        b_orig = b + np.sum(w_no_bias * self.n_min) - np.sum(w_no_bias * self.x_min / scale)
 
         return np.concatenate([w_orig, [b_orig]])
 
