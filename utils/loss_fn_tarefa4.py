@@ -1,9 +1,8 @@
 import numpy as np
+from utils.activations_fn import tanh, tanh_derivative
 
-def tanh(x): return np.tanh(x)
-def dtanh(x): return 1 - np.tanh(x)**2
 
-def make_mse_loss_for_neuron(x_data, y_data, z_data, activation_fn=tanh, activation_deriv=dtanh):
+def make_mse_loss_for_neuron(x_data, y_data, z_data, activation_fn=tanh, activation_deriv=tanh_derivative):
     X = np.column_stack([x_data, y_data, np.ones(len(x_data))])
     y = z_data
     n = len(y)
