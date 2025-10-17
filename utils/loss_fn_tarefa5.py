@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.abspath("./libs"))
-from network import network_forward
+from network import hidden_forward
 
 
 def tanh(x): return np.tanh(x)
@@ -26,7 +26,7 @@ def make_mse_loss_for_network(X1, X2, Y, n_neurons=2, activation_fn=np.tanh):
         neurons_weights.append(w_output)
 
         # Calcular a saída da rede
-        y_hat = network_forward(X1, X2, neurons_weights=neurons_weights, activation_fn=activation_fn)
+        y_hat = hidden_forward(X1, X2, neurons_weights=neurons_weights, activation_fn=activation_fn)
 
         # Calcular MSE
         mse = np.mean((Y - y_hat) ** 2)

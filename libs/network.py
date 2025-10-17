@@ -1,4 +1,11 @@
+import os
+import sys
 import numpy as np
+
+sys.path.append(os.path.abspath("./libs"))
+sys.path.append(os.path.abspath("./utils"))
+
+from activations_fn import tanh_derivative
 
 def neuron(*features, weights=None, activation_fn=np.tanh):
     """
@@ -51,7 +58,7 @@ def neuron(*features, weights=None, activation_fn=np.tanh):
     return y
 
 
-def network_forward(*features, neurons_weights, activation_fn=np.tanh):
+def hidden_forward(*features, neurons_weights, activation_fn=np.tanh):
     """
     Rede neural simples com uma camada oculta de N neurônios e uma camada de saída.
 
@@ -79,3 +86,112 @@ def network_forward(*features, neurons_weights, activation_fn=np.tanh):
     y_hat = neuron(*hidden_outputs, weights=neurons_weights[-1], activation_fn=activation_fn)
 
     return y_hat
+
+
+def make_residuals_fn(X1: np.ndarray, X2: np.ndarray, Y: np.ndarray, n_neurons=2, activation_fn=np.tanh):
+    def residuals_fn(weights_flat) -> np.ndarray:
+        # Reconstruir os pesos para cada neurônio
+        neurons_weights = []
+        idx = 0
+
+        # Reconstruir pesos da camada oculta
+        for _ in range(n_neurons):
+            w_hidden = weights_flat[idx:idx+3]  # 3 pesos para cada neurônio oculto
+            neurons_weights.append(w_hidden)
+            idx += 3
+
+        # Reconstruir pesos da camada de saída
+        w_output = weights_flat[idx:]
+        neurons_weights.append(w_output)
+
+        y_hat = hidden_forward(X1, X2, neurons_weights=neurons_weights, activation_fn=activation_fn)
+        return Y - y_hat
+
+    return residuals_fn
+
+
+def make_jacobian_fn(X1, X2, n_neurons=2, activation_fn=np.tanh, activation_deriv=tanh_derivative):
+    """
+    Cria uma função que calcula a Jacobiana da rede neural.
+    """
+
+    def jacobian_fn(weights_flat):
+        # Reconstruir os pesos para cada neurônio
+        neurons_weights = []
+        idx = 0
+
+        # Reconstruir pesos da camada oculta
+        for i in range(n_neurons):
+            w_hidden = weights_flat[idx:idx+3]  # 3 pesos para cada neurônio oculto
+            neurons_weights.append(w_hidden)
+            idx += 3
+
+        # Reconstruir pesos da camada de saída
+        w_output = weights_flat[idx:]
+        neurons_weights.append(w_output)
+
+        # Preparar entradas
+        X1_ = np.atleast_1d(X1)
+        X2_ = np.atleast_1d(X2)
+        X = np.stack([X1_, X2_, np.ones_like(X1_)], axis=1)  # (n_amostras, 3)
+        n_samples = X.shape[0]
+
+        num_neurons = len(neurons_weights) - 1  # todos menos o da saída
+        w_out = neurons_weights[-1]            # pesos da camada de saída
+        hidden_z = []                          # potenciais da camada oculta
+        hidden_h = []                          # saídas da camada oculta
+
+        # Calcular saídas da camada oculta
+        for j in range(num_neurons):
+            z_j = X @ neurons_weights[j]       # Potencial do neurônio j
+            h_j = activation_fn(z_j)           # Saída do neurônio j
+            hidden_z.append(z_j)
+            hidden_h.append(h_j)
+
+        # Empilhar saídas ocultas e calcular saída final
+        hidden_h = np.stack(hidden_h, axis=1)
+        z_out = np.column_stack([hidden_h, np.ones(n_samples)]) @ w_out
+
+        # Inicializar Jacobiana
+        total_params = num_neurons * X.shape[1] + len(w_out)
+        J = np.zeros((n_samples, total_params))
+
+        # Calcular derivadas parciais
+        dy_dz_out = activation_deriv(z_out)
+        idx = 0
+
+        # Derivadas em relação aos pesos da camada oculta
+        for j in range(num_neurons):
+            v_j = w_out[j]                     # peso da saída para neurônio j
+            dz_hidden = activation_deriv(hidden_z[j])  # derivada da ativação do oculto
+
+            for i in range(X.shape[1]):        # x1, x2, bias
+                if i < 2:
+                    J[:, idx] = -dy_dz_out * v_j * dz_hidden * X[:, i]
+                else:  # bias da camada oculta
+                    J[:, idx] = -dy_dz_out * v_j * dz_hidden
+                idx += 1
+
+        # Derivadas em relação aos pesos da camada de saída
+        for j in range(num_neurons):
+            J[:, idx] = -dy_dz_out * hidden_h[:, j]
+            idx += 1
+
+        # Bias da saída
+        J[:, idx] = -dy_dz_out
+
+        return J
+
+    return jacobian_fn
+
+
+def unflatten_weights(weights_flat, n_inputs, n_hidden):
+    neurons_weights = []
+    idx = 0
+    for _ in range(n_hidden):
+        w_hidden = weights_flat[idx:idx + (n_inputs + 1)]
+        neurons_weights.append(w_hidden)
+        idx += n_inputs + 1
+    w_output = weights_flat[idx:]
+    neurons_weights.append(w_output)
+    return neurons_weights

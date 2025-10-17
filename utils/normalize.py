@@ -22,9 +22,13 @@ class MinMaxNormalizer:
         return self.n_min + ((X - self.x_min) * (self.n_max - self.n_min)) / (self.x_max - self.x_min)
 
     def denormalize(self, X_norm: np.ndarray) -> np.ndarray:
-        if self.x_min is None or self.x_max is None:
-            raise ValueError("Você deve chamar 'fit' antes de desnormalizar.")
-        return self.x_min + ((X_norm - self.n_min) * (self.x_max - self.x_min)) / (self.n_max - self.n_min)
+        arr = np.asarray(X_norm)
+
+        if arr.ndim == 1:
+            return self.x_min + ((arr - self.n_min) * (self.x_max - self.x_min)) / (self.n_max - self.n_min)
+        else:
+            # Aplica por coluna
+            return self.x_min.values + ((arr - self.n_min) * (self.x_max.values - self.x_min.values)) / (self.n_max - self.n_min)
 
     def desnormalize_weights(self, w: np.ndarray) -> np.ndarray:
         """
