@@ -35,7 +35,7 @@ class MinMaxNormalizer:
         Converte pesos de um modelo linear treinado em dados Min-Max normalizados
         para a escala original.
         w = [w1, w2, ..., bias]
-        """
+        """ 
         if self.x_min is None or self.x_max is None:
             raise ValueError("Você deve chamar 'fit' antes de desnormalizar pesos.")
 

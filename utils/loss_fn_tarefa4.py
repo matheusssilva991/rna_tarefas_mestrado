@@ -1,5 +1,10 @@
 import numpy as np
-from utils.activations_fn import tanh, tanh_derivative
+import os
+import sys
+
+sys.path.append(os.path.abspath("../utils"))
+
+from activations_fn import tanh, tanh_derivative
 
 
 def make_mse_loss_for_neuron(x_data, y_data, z_data, activation_fn=tanh, activation_deriv=tanh_derivative):
