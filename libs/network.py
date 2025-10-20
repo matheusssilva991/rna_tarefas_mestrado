@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath("./utils"))
 
 from activations_fn import tanh_derivative
 
+
 def neuron(*features, weights=None, activation_fn=np.tanh):
     """
     Neurônio simples com múltiplas entradas e um termo de bias.
@@ -91,23 +92,22 @@ def hidden_forward(*features, neurons_weights, activation_fn=np.tanh):
 def make_residuals_fn(X1: np.ndarray, X2: np.ndarray, Y: np.ndarray, n_neurons=2, activation_fn=np.tanh):
     def residuals_fn(weights_flat) -> np.ndarray:
         # Reconstruir os pesos para cada neurônio
-        neurons_weights = []
-        idx = 0
-
-        # Reconstruir pesos da camada oculta
-        for _ in range(n_neurons):
-            w_hidden = weights_flat[idx:idx+3]  # 3 pesos para cada neurônio oculto
-            neurons_weights.append(w_hidden)
-            idx += 3
-
-        # Reconstruir pesos da camada de saída
-        w_output = weights_flat[idx:]
-        neurons_weights.append(w_output)
+        neurons_weights = unflatten_weights(weights_flat, n_inputs=2, n_neurons=n_neurons)
 
         y_hat = hidden_forward(X1, X2, neurons_weights=neurons_weights, activation_fn=activation_fn)
         return Y - y_hat
 
     return residuals_fn
+
+
+def make_mse_loss_for_network(X1, X2, Y, n_neurons=2, activation_fn=np.tanh):
+    residuals_fn = make_residuals_fn(X1, X2, Y, n_neurons=n_neurons, activation_fn=activation_fn)
+
+    def loss_fn(weights_flat):
+        residuals = residuals_fn(weights_flat)
+        return np.mean(residuals**2)
+
+    return loss_fn
 
 
 def make_jacobian_fn(X1, X2, n_neurons=2, activation_fn=np.tanh, activation_deriv=tanh_derivative):
@@ -117,18 +117,7 @@ def make_jacobian_fn(X1, X2, n_neurons=2, activation_fn=np.tanh, activation_deri
 
     def jacobian_fn(weights_flat):
         # Reconstruir os pesos para cada neurônio
-        neurons_weights = []
-        idx = 0
-
-        # Reconstruir pesos da camada oculta
-        for i in range(n_neurons):
-            w_hidden = weights_flat[idx:idx+3]  # 3 pesos para cada neurônio oculto
-            neurons_weights.append(w_hidden)
-            idx += 3
-
-        # Reconstruir pesos da camada de saída
-        w_output = weights_flat[idx:]
-        neurons_weights.append(w_output)
+        neurons_weights = unflatten_weights(weights_flat, n_inputs=2, n_neurons=n_neurons)
 
         # Preparar entradas
         X1_ = np.atleast_1d(X1)
@@ -185,13 +174,25 @@ def make_jacobian_fn(X1, X2, n_neurons=2, activation_fn=np.tanh, activation_deri
     return jacobian_fn
 
 
-def unflatten_weights(weights_flat, n_inputs, n_hidden):
-    neurons_weights = []
-    idx = 0
-    for _ in range(n_hidden):
+def unflatten_weights(weights_flat, n_inputs, n_neurons):
+    neurons_weights = [] # Lista para armazenar os pesos de cada neurônio
+    idx = 0 # Índice para rastrear a posição atual em weights_flat
+
+    # Reconstruir pesos da camada oculta
+    for _ in range(n_neurons):
+        # Cada neurônio tem (n_inputs + 1) pesos (incluindo bias)
         w_hidden = weights_flat[idx:idx + (n_inputs + 1)]
+
+        # Adicionar pesos do neurônio à lista
         neurons_weights.append(w_hidden)
+
+        # Atualizar índice
         idx += n_inputs + 1
+
+    # Reconstruir pesos da camada de saída
     w_output = weights_flat[idx:]
+
+    # Adicionar pesos da camada de saída à lista
     neurons_weights.append(w_output)
+
     return neurons_weights
