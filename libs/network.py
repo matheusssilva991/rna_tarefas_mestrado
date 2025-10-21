@@ -151,14 +151,14 @@ def make_jacobian_fn(X1, X2, n_neurons=2, activation_fn=np.tanh, activation_deri
 
         # Derivadas em relação aos pesos da camada oculta
         for j in range(num_neurons):
-            v_j = w_out[j]                     # peso da saída para neurônio j
-            dz_hidden = activation_deriv(hidden_z[j])  # derivada da ativação do oculto
+            output_weight_for_neuron_j = w_out[j]      # peso da saída para neurônio j (w_out_j)
+            dz_hidden = activation_deriv(hidden_z[j])  # derivada da ativação do oculto (dz_j/dh_j)
 
-            for i in range(X.shape[1]):        # x1, x2, bias
+            for i in range(X.shape[1]):  # x1, x2, bias
                 if i < 2:
-                    J[:, idx] = -dy_dz_out * v_j * dz_hidden * X[:, i]
+                    J[:, idx] = -dy_dz_out * output_weight_for_neuron_j * dz_hidden * X[:, i]
                 else:  # bias da camada oculta
-                    J[:, idx] = -dy_dz_out * v_j * dz_hidden
+                    J[:, idx] = -dy_dz_out * output_weight_for_neuron_j * dz_hidden
                 idx += 1
 
         # Derivadas em relação aos pesos da camada de saída
