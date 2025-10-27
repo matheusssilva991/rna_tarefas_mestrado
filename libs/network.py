@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath("./libs"))
 sys.path.append(os.path.abspath("./utils"))
 
 from activations_fn import tanh_derivative
+from levenberg_marquadt import levenberg_marquadt
 
 
 def neuron(*features, weights=None, activation_fn=np.tanh):
@@ -196,3 +197,92 @@ def unflatten_weights(weights_flat, n_inputs, n_neurons):
     neurons_weights.append(w_output)
 
     return neurons_weights
+
+
+def optimize_network_weights(X1, X2, y, **kwargs):
+    n_neurons = kwargs.get("n_neurons", 10)
+    activation_fn = kwargs.get("activation_fn", np.tanh)
+    n_iterations = kwargs.get("n_iterations", 1000)
+    tolerance = kwargs.get("tolerance", 1e-6)
+    alpha = kwargs.get("alpha", 1e-3)
+    initial_weights = kwargs.get(
+        "initial_weights",
+        np.random.uniform(-1, 1, size=(n_neurons * 3,)),
+    )
+
+    # Função de custo e gradiente
+    loss_function = make_mse_loss_for_network(
+        X1, X2, y, activation_fn=activation_fn, n_neurons=n_neurons
+    )
+
+    # Função de resíduos
+    residuals_fn = make_residuals_fn(
+        X1, X2, y, n_neurons=n_neurons, activation_fn=np.tanh
+    )
+
+    # Função da jacobiana
+    jacobian_fn = make_jacobian_fn(
+        X1,
+        X2,
+        n_neurons=n_neurons,
+        activation_fn=np.tanh,
+        activation_deriv=tanh_derivative,
+    )
+
+    # Treinar com Levenberg-Marquardt
+    neurons_weights, losses, n_iters = levenberg_marquadt(
+        initial_weights,
+        residuals_fn,
+        loss_function,
+        jacobian_fn,
+        alpha=alpha,
+        alpha_variability=10,
+        max_iter=n_iterations,
+        tolerance=tolerance,
+        stopping_criteria=[1, 3],
+    )
+
+    return neurons_weights, losses, n_iters
+
+
+def train_network(X1, X2, y, **kwargs):
+    n_neurons = kwargs.get("n_neurons", 10)
+    activation_fn = kwargs.get("activation_fn", np.tanh)
+    n_epochs = kwargs.get("n_epochs", 100)
+    n_iterations_per_epoch = kwargs.get("n_iterations_per_epoch", 1000)
+    tolerance = kwargs.get("tolerance", 1e-6)
+    alpha = kwargs.get("alpha", 1e-3)
+
+    # Inicializar pesos
+    # Para n_neurons na camada oculta
+    hidden_weights = [np.random.uniform(-1, 1, size=3) for _ in range(n_neurons)]
+    # Para o neurônio de saída
+    output_weights = np.random.uniform(-1, 1, size=n_neurons + 1)
+    # Concatenar todos os pesos
+    initial_weights = np.concatenate([w.flatten() for w in hidden_weights] + [output_weights.flatten()])
+
+    all_losses = []
+    total_iters = 0
+
+    for _ in range(n_epochs):
+        # Treinar a rede neural
+        initial_weights, losses, n_iters = optimize_network_weights(
+            X1,
+            X2,
+            y,
+            n_neurons=n_neurons,
+            activation_fn=activation_fn,
+            n_iterations=n_iterations_per_epoch,
+            tolerance=tolerance,
+            alpha=alpha,
+            initial_weights=initial_weights,
+        )
+        initial_weights = initial_weights[-1]
+
+        all_losses.extend(losses)
+        total_iters += n_iters
+
+        """ if epoch % 10 == 0 or epoch == n_epochs - 1:
+            print(f"Epoch {epoch + 1}/{n_epochs}, Loss: {losses[-1]:.6f}") """
+
+    return initial_weights, all_losses, total_iters
